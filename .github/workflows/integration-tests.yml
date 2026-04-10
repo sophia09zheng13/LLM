@@ -19,11 +19,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install package
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .
+          pip install groq python-dotenv
 
-      - name: Check that chat.py parses
+      - name: Check syntax
         run: |
           python -m py_compile chat.py
