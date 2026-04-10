@@ -1,7 +1,7 @@
 import json
 import os
 from groq import Groq
-from tools.calculate import calculate, tool_schema
+from docsum.tools.calculate import calculate, tool_schema
 
 
 from dotenv import load_dotenv
@@ -19,7 +19,6 @@ class Chat:
     >>> chat2.send_message('what is my name?', temperature=0.0)
     "Arrr, I be not aware o' yer name, matey."
     '''
-    client = Groq()
     def __init__(self):
         self.MODEL = "openai/gpt-oss-120b"
         self.messages = [
