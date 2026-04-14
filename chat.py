@@ -145,7 +145,8 @@ def repl(temperature=0.0):
     ...     if msg == "Hello, I am monkey." else
     ...     "Farewell, little monkey."
     ... )
-    >>> repl()
+    >>> with unittest.mock.patch('chat.Groq'):
+    ...     repl()
     chat> Hello, I am monkey.
     Arrr, a sneaky little monkey!
     chat> Goodbye.
@@ -163,7 +164,8 @@ def repl(temperature=0.0):
     ...         raise KeyboardInterrupt
     >>> builtins.input = monkey_input2
     >>> chat.Chat.send_message = lambda self, msg, **kwargs: "Farewell."
-    >>> repl()
+    >>> with unittest.mock.patch('chat.Groq'):
+    ...     repl()
     chat> /ls tools
     __init__.py calculate.py cat.py grep.py ls.py utils.py
     chat> Goodbye.
