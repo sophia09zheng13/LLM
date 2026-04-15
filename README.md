@@ -3,7 +3,8 @@
 [![tests](https://github.com/sophia09zheng13/LLM/actions/workflows/tests.yml/badge.svg)](https://github.com/sophia09zheng13/LLM/actions/workflows/tests.yml)
 [![integration-tests](https://github.com/sophia09zheng13/LLM/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/sophia09zheng13/LLM/actions/workflows/integration-tests.yml)
 [![PyPI](https://img.shields.io/pypi/v/cmc-csci040-sophiazheng)](https://pypi.org/project/cmc-csci040-sophiazheng/)
-[![flake8](https://github.com/sophia09zheng13/LLM/actions/workflows/flake8.yml/badge.svg)](https://github.com/sophia09zheng13/LLM/actions/workflows/flake8.yml) 
+[![flake8](https://github.com/sophia09zheng13/LLM/actions/workflows/flake8.yml/badge.svg)](https://github.com/sophia09zheng13/LLM/actions/workflows/flake8.yml)
+[![codecov](https://codecov.io/gh/sophia09zheng13/LLM/branch/main/graph/badge.svg)](https://codecov.io/gh/sophia09zheng13/LLM)
 
 A pirate-themed command-line chat agent powered by Groq's LLM API. The agent
 can answer questions, remember conversational context, and call built-in tools

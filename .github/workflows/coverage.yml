@@ -1,0 +1,38 @@
+name: coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: docsum
+        run: |
+          python -m pip install --upgrade pip
+          pip install groq python-dotenv coverage
+
+      - name: Run doctests with coverage
+        working-directory: docsum
+        run: |
+          coverage run -m doctest chat.py tools/utils.py tools/calculate.py tools/cat.py tools/grep.py tools/ls.py
+          coverage xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: docsum/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
