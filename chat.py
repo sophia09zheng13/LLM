@@ -66,8 +66,49 @@ class Chat:
         returned directly (no pirate rephrasing).  All other tool results are
         fed back to the model for a final natural-language response.
 
-        This method makes live API calls and is therefore tested via
-        integration tests rather than unit doctests.
+        Unit tests mock the Groq client so no API key is required.
+
+        No-tool-call path (model replies directly):
+        >>> import unittest.mock, types
+        >>> fake_msg = types.SimpleNamespace(tool_calls=None, content='Arrr!')
+        >>> fake_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_msg)])
+        >>> with unittest.mock.patch('chat.Groq') as MockGroq:
+        ...     MockGroq.return_value.chat.completions.create.return_value = fake_resp
+        ...     c = Chat()
+        ...     c.send_message('hello')
+        'Arrr!'
+
+        Tool-call path — non-cat tool (calculate), expects second API call:
+        >>> tool_call = types.SimpleNamespace(
+        ...     id='tc1',
+        ...     function=types.SimpleNamespace(name='calculate', arguments='{"expression": "1+1"}')
+        ... )
+        >>> fake_tool_msg = types.SimpleNamespace(tool_calls=[tool_call], content=None)
+        >>> fake_tool_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_tool_msg)])
+        >>> fake_final_msg = types.SimpleNamespace(content='The answer be 2!')
+        >>> fake_final_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_final_msg)])
+        >>> with unittest.mock.patch('chat.Groq') as MockGroq:
+        ...     mock_create = MockGroq.return_value.chat.completions.create
+        ...     mock_create.side_effect = [fake_tool_resp, fake_final_resp]
+        ...     c = Chat()
+        ...     c.send_message('what is 1+1?')  # doctest: +ELLIPSIS
+        [tool] function_name=calculate, function_args=...
+        'The answer be 2!'
+
+        Tool-call path — cat tool returns raw file content without second API call:
+        >>> cat_call = types.SimpleNamespace(
+        ...     id='tc2',
+        ...     function=types.SimpleNamespace(name='cat', arguments='{"file": "tools/calculate.py"}')
+        ... )
+        >>> fake_cat_msg = types.SimpleNamespace(tool_calls=[cat_call], content=None)
+        >>> fake_cat_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_cat_msg)])
+        >>> with unittest.mock.patch('chat.Groq') as MockGroq:
+        ...     MockGroq.return_value.chat.completions.create.return_value = fake_cat_resp
+        ...     c = Chat()
+        ...     result = c.send_message('show me calculate.py')  # doctest: +ELLIPSIS
+        [tool] function_name=cat, function_args=...
+        >>> 'def calculate' in result
+        True
         """
         self.messages.append({'role': 'user', 'content': message})
 
