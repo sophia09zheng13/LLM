@@ -1,4 +1,9 @@
 tutorial.py
+node_modules/
+.DS_Store
+demo.cast
+package.json
+package-lock.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
