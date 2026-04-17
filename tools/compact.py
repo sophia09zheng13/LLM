@@ -38,6 +38,7 @@ def compact(messages, _Chat=None):
     >>> 'system' not in call_args
     True
     """
+    # you could avoid this by actually passing in a chat instance and not allowing None as a default param
     if _Chat is None:
         from chat import Chat  # lazy import to avoid circular dependency
         _Chat = Chat
@@ -48,6 +49,7 @@ def compact(messages, _Chat=None):
             conversation_lines.append(f"{m['role'].upper()}: {m['content']}")
     conversation_text = '\n'.join(conversation_lines)
 
+    # overall good implmentation
     subagent = _Chat()
     summary = subagent.send_message(
         "Summarize this conversation in 1-5 lines of plain text, "
