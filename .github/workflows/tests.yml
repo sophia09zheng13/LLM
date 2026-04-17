@@ -34,5 +34,6 @@ jobs:
           python -m doctest tools/utils.py -v
           python -m doctest tools/calculate.py -v
           python -m doctest tools/cat.py -v
+          python -m doctest tools/compact.py -v
           python -m doctest tools/grep.py -v
           python -m doctest tools/ls.py -v

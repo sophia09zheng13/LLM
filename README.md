@@ -84,6 +84,17 @@ chat> /cat tools/calculate.py
 ...
 ```
 
+Using `/compact` summarizes the entire conversation so far into 1-5 lines and replaces the message history with that summary. This keeps token counts low for long sessions.
+
+```
+chat> my name is Alice
+Arrr, pleasure to meet ye, Alice!
+chat> what is 2+2?
+Arrr, it be 4, matey!
+chat> /compact
+Alice introduced herself. The assistant confirmed her name and answered that 2+2 equals 4.
+```
+
 ## Tools
 
 | Tool | Description |
@@ -92,3 +103,4 @@ chat> /cat tools/calculate.py
 | `ls [folder]` | List files in a directory |
 | `cat file` | Print the contents of a file |
 | `grep pattern path` | Search for lines matching a regex across files |
+| `compact` | Summarize conversation history and reset to a compact summary (slash command only) |

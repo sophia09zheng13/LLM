@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from tools.calculate import calculate, tool_schema as calculate_schema
 from tools.cat import cat, tool_schema as cat_schema
+from tools.compact import compact
 from tools.grep import grep, tool_schema as grep_schema
 from tools.ls import ls, tool_schema as ls_schema
 
@@ -226,9 +227,26 @@ def repl(debug=False, temperature=0.0):
     >>> with unittest.mock.patch('chat.Groq'):
     ...     repl()
     chat> /ls tools
-    __init__.py calculate.py cat.py grep.py ls.py utils.py
+    __init__.py calculate.py cat.py compact.py grep.py ls.py utils.py
     chat> Goodbye.
     Farewell.
+    <BLANKLINE>
+
+    Test /compact — summarizes history and resets messages to just the summary:
+
+    >>> def monkey_input_compact(prompt, user_inputs=['/compact']):
+    ...     try:
+    ...         user_input = user_inputs.pop(0)
+    ...         print(f'{prompt}{user_input}')
+    ...         return user_input
+    ...     except IndexError:
+    ...         raise KeyboardInterrupt
+    >>> builtins.input = monkey_input_compact
+    >>> with unittest.mock.patch('chat.Groq'), \
+    ...      unittest.mock.patch('chat.compact', return_value='User asked about math.') as mock_compact:
+    ...     repl()
+    chat> /compact
+    User asked about math.
     <BLANKLINE>
 
     Test debug=True — the flag is forwarded to send_message:
@@ -257,7 +275,14 @@ def repl(debug=False, temperature=0.0):
                 parts = user_input[1:].split()
                 command = parts[0]
                 args = parts[1:]
-                if command in available_functions:
+                if command == 'compact':
+                    summary = compact(chat.messages)
+                    print(summary)
+                    chat.messages = [
+                        {'role': 'system', 'content': _SYSTEM_PROMPT},
+                        {'role': 'assistant', 'content': summary},
+                    ]
+                elif command in available_functions:
                     result = available_functions[command](*args)
                     print(result)
                     chat.messages.append({'role': 'user', 'content': user_input})

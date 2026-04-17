@@ -26,7 +26,7 @@ jobs:
 
       - name: Run doctests with coverage
         run: |
-          coverage run -m doctest chat.py tools/utils.py tools/calculate.py tools/cat.py tools/grep.py tools/ls.py
+          coverage run -m doctest chat.py tools/utils.py tools/calculate.py tools/cat.py tools/compact.py tools/grep.py tools/ls.py
           coverage xml
 
       - name: Upload coverage to Codecov

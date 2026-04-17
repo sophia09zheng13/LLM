@@ -1,1 +1,1 @@
-"""Tool modules for the chat agent (calculate, cat, grep, ls)."""
+"""Tool modules for the chat agent (calculate, cat, compact, grep, ls)."""

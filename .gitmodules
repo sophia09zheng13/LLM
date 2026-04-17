@@ -1,9 +1,0 @@
-[submodule "test_projects/ebay-scraping-project"]
-	path = test_projects/ebay-scraping-project
-	url = https://github.com/sophia09zheng13/ebay-scraping-project
-[submodule "test_projects/markdown-compiler"]
-	path = test_projects/markdown-compiler
-	url = https://github.com/sophia09zheng13/markdown-compiler
-[submodule "test_projects/sophia09zheng13.github.io"]
-	path = test_projects/sophia09zheng13.github.io
-	url = https://github.com/sophia09zheng13/sophia09zheng13.github.io
