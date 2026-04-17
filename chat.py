@@ -1,11 +1,13 @@
 """Pirate-themed command-line chat agent backed by the Groq LLM API.
 
 Run ``python chat.py`` (or the ``chat`` entry-point after installation) to
-start an interactive REPL.  Type ``/tool arg1 arg2`` to invoke a tool
-directly without an LLM round-trip.
+start an interactive REPL.  Pass a message as a positional argument to get a
+single response and exit.  Use ``--debug`` to see tool calls as they happen.
 """
 
+import argparse
 import json
+import sys
 
 from groq import Groq
 from dotenv import load_dotenv
@@ -59,12 +61,15 @@ class Chat:
         self.MODEL = "openai/gpt-oss-120b"
         self.messages = [{"role": "system", "content": _SYSTEM_PROMPT}]
 
-    def send_message(self, message, temperature=0.0):
+    def send_message(self, message, temperature=0.0, debug=False):
         """Append *message* to history, call the LLM, execute any tool calls, and return the reply.
 
         If the model requests a ``cat`` tool call the raw file contents are
         returned directly (no pirate rephrasing).  All other tool results are
         fed back to the model for a final natural-language response.
+
+        When *debug* is ``True``, each tool call is printed as
+        ``[tool] /tool_name arg1 arg2`` before it executes.
 
         Unit tests mock the Groq client so no API key is required.
 
@@ -78,7 +83,7 @@ class Chat:
         ...     c.send_message('hello')
         'Arrr!'
 
-        Tool-call path — non-cat tool (calculate), expects second API call:
+        Tool-call path — non-cat tool (calculate), debug=True prints the call:
         >>> tool_call = types.SimpleNamespace(
         ...     id='tc1',
         ...     function=types.SimpleNamespace(name='calculate', arguments='{"expression": "1+1"}')
@@ -91,8 +96,16 @@ class Chat:
         ...     mock_create = MockGroq.return_value.chat.completions.create
         ...     mock_create.side_effect = [fake_tool_resp, fake_final_resp]
         ...     c = Chat()
-        ...     c.send_message('what is 1+1?')  # doctest: +ELLIPSIS
-        [tool] function_name=calculate, function_args=...
+        ...     c.send_message('what is 1+1?', debug=True)
+        [tool] /calculate 1+1
+        'The answer be 2!'
+
+        Without debug=True no tool output is printed:
+        >>> with unittest.mock.patch('chat.Groq') as MockGroq:
+        ...     mock_create = MockGroq.return_value.chat.completions.create
+        ...     mock_create.side_effect = [fake_tool_resp, fake_final_resp]
+        ...     c = Chat()
+        ...     c.send_message('what is 1+1?', debug=False)
         'The answer be 2!'
 
         Tool-call path — cat tool returns raw file content without second API call:
@@ -105,8 +118,8 @@ class Chat:
         >>> with unittest.mock.patch('chat.Groq') as MockGroq:
         ...     MockGroq.return_value.chat.completions.create.return_value = fake_cat_resp
         ...     c = Chat()
-        ...     result = c.send_message('show me calculate.py')  # doctest: +ELLIPSIS
-        [tool] function_name=cat, function_args=...
+        ...     result = c.send_message('show me calculate.py', debug=True)
+        [tool] /cat tools/calculate.py
         >>> 'def calculate' in result
         True
         """
@@ -132,7 +145,10 @@ class Chat:
                 function_to_call = available_functions[function_name]
                 function_args = json.loads(tool_call.function.arguments)
                 function_response = function_to_call(**function_args)
-                print(f"[tool] function_name={function_name}, function_args={function_args}")
+
+                if debug:
+                    args_str = ' '.join(str(v) for v in function_args.values())
+                    print(f"[tool] /{function_name} {args_str}".rstrip())
 
                 if function_name == "cat":
                     raw_output = function_response
@@ -161,13 +177,16 @@ class Chat:
         return result
 
 
-def repl(temperature=0.0):
+def repl(debug=False, temperature=0.0):
     """Run an interactive read-eval-print loop.
 
     Lines that start with ``/`` are treated as direct tool invocations and
     bypass the LLM entirely.  The tool output is printed immediately and
     added to the conversation history so the model has context for follow-up
     questions.
+
+    When *debug* is ``True``, tool calls made by the LLM are printed as
+    ``[tool] /tool_name args`` before the response.
 
     Test normal LLM messages (send_message is mocked so no API call is made):
 
@@ -212,6 +231,23 @@ def repl(temperature=0.0):
     chat> Goodbye.
     Farewell.
     <BLANKLINE>
+
+    Test debug=True — the flag is forwarded to send_message:
+
+    >>> def monkey_input3(prompt, user_inputs=['hello']):
+    ...     try:
+    ...         user_input = user_inputs.pop(0)
+    ...         print(f'{prompt}{user_input}')
+    ...         return user_input
+    ...     except IndexError:
+    ...         raise KeyboardInterrupt
+    >>> builtins.input = monkey_input3
+    >>> chat.Chat.send_message = lambda self, msg, debug=False, **kwargs: f"debug={debug}"
+    >>> with unittest.mock.patch('chat.Groq'):
+    ...     repl(debug=True)
+    chat> hello
+    debug=True
+    <BLANKLINE>
     """
     import readline  # noqa: F401 — enables arrow-key history on supported platforms
     chat = Chat()
@@ -230,11 +266,56 @@ def repl(temperature=0.0):
                 else:
                     print(f"Unknown command: /{command}")
             else:
-                response = chat.send_message(user_input)
+                response = chat.send_message(user_input, debug=debug)
                 print(response)
     except (KeyboardInterrupt, EOFError):
         print()
 
 
+def main():
+    """Parse command-line arguments and run the agent.
+
+    With no positional argument, starts the interactive REPL.
+    With a positional message, sends that message and exits.
+    ``--debug`` prints tool calls as ``[tool] /tool_name args``.
+
+    >>> import unittest.mock, types
+    >>> fake_msg = types.SimpleNamespace(tool_calls=None, content='Arrr!')
+    >>> fake_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_msg)])
+    >>> with unittest.mock.patch('chat.Groq') as MockGroq, \\
+    ...      unittest.mock.patch('sys.argv', ['chat', 'hello']):
+    ...     MockGroq.return_value.chat.completions.create.return_value = fake_resp
+    ...     main()
+    Arrr!
+
+    With --debug and a tool call, the tool invocation is printed:
+    >>> tool_call = types.SimpleNamespace(
+    ...     id='tc1',
+    ...     function=types.SimpleNamespace(name='calculate', arguments='{"expression": "1+1"}')
+    ... )
+    >>> fake_tool_msg = types.SimpleNamespace(tool_calls=[tool_call], content=None)
+    >>> fake_tool_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_tool_msg)])
+    >>> fake_final_msg = types.SimpleNamespace(content='The answer be 2!')
+    >>> fake_final_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_final_msg)])
+    >>> with unittest.mock.patch('chat.Groq') as MockGroq, \\
+    ...      unittest.mock.patch('sys.argv', ['chat', '--debug', 'what is 1+1?']):
+    ...     MockGroq.return_value.chat.completions.create.side_effect = [fake_tool_resp, fake_final_resp]
+    ...     main()
+    [tool] /calculate 1+1
+    The answer be 2!
+    """
+    parser = argparse.ArgumentParser(description='Pirate-themed chat agent powered by Groq.')
+    parser.add_argument('message', nargs='?', help='Send a single message and exit.')
+    parser.add_argument('--debug', action='store_true', help='Print tool calls as they happen.')
+    args = parser.parse_args()
+
+    if args.message:
+        chat = Chat()
+        response = chat.send_message(args.message, debug=args.debug)
+        print(response)
+    else:
+        repl(debug=args.debug)
+
+
 if __name__ == '__main__':
-    repl()
+    main()

@@ -27,11 +27,39 @@ jobs:
           python -m pip install --upgrade pip
           pip install groq python-dotenv
 
-      - name: Run integration doctests (requires GROQ_API_KEY secret)
+      - name: Run Chat class doctests (live API)
         run: |
           python -c "
           import chat, doctest
-          # Run only the Chat class doctests which make live API calls
           results = doctest.testmod(chat, verbose=True)
           assert results.failed == 0, f'{results.failed} doctest(s) failed'
+          "
+
+      - name: Integration test — single message CLI argument
+        run: |
+          python -c "
+          import sys, io, chat
+          from contextlib import redirect_stdout
+          sys.argv = ['chat', 'what is 2 + 2?']
+          f = io.StringIO()
+          with redirect_stdout(f):
+              chat.main()
+          output = f.getvalue()
+          assert '4' in output, f'Expected 4 in output, got: {output}'
+          print('single-message test passed:', output.strip())
+          "
+
+      - name: Integration test — --debug flag prints tool calls
+        run: |
+          python -c "
+          import sys, io, chat
+          from contextlib import redirect_stdout
+          sys.argv = ['chat', '--debug', 'what is 2 + 2?']
+          f = io.StringIO()
+          with redirect_stdout(f):
+              chat.main()
+          output = f.getvalue()
+          assert '4' in output, f'Expected 4 in output, got: {output}'
+          assert '[tool]' in output, f'Expected [tool] debug output, got: {output}'
+          print('debug test passed:', output.strip())
           "
