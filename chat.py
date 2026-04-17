@@ -266,7 +266,6 @@ def repl(debug=False, temperature=0.0):
     """
     readline.set_completer(_make_completer())
     readline.set_completer_delims(' \t')
-   
     if 'libedit' in getattr(readline, '__doc__', ''):
         readline.parse_and_bind('bind ^I rl_complete')
     else:
