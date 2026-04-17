@@ -13,3 +13,6 @@ dependencies = [
 
 [project.scripts]
 chat = "chat:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
