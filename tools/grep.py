@@ -42,7 +42,7 @@ def grep(pattern, path):
     >>> grep('zzz_no_match', 'tools/calculate.py')
     ''
     >>> grep('^def ', 'tools/*.py')
-    'tools/calculate.py:def calculate(expression):\\ntools/cat.py:def cat(file):\\ntools/compact.py:def compact(messages, _Chat=None):\\ntools/grep.py:def grep(pattern, path):\\ntools/ls.py:def ls(folder=None):\\ntools/utils.py:def is_path_safe(path):'
+    'tools/calculate.py:def calculate(expression):\\ntools/cat.py:def cat(file):\\ntools/compact.py:def compact(messages, subagent):\\ntools/grep.py:def grep(pattern, path):\\ntools/ls.py:def ls(folder=None):\\ntools/utils.py:def is_path_safe(path):'
     >>> grep('^def ', '/etc/passwd')
     "Error: path '/etc/passwd' is not allowed"
     >>> grep('^def ', '../secret.py')
