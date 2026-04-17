@@ -32,8 +32,8 @@ def ls(folder=None):
 
     >>> 'chat.py' in ls()
     True
-    >>> 'ls.py' in ls('tools')
-    True
+    >>> ls('tools') # this is not a good test; actually list out the contents
+    '__init__.py calculate.py cat.py compact.py grep.py ls.py utils.py'
     >>> ls('/etc')
     "Error: path '/etc' is not allowed"
     >>> ls('../..')
