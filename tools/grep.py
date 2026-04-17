@@ -37,6 +37,8 @@ def grep(pattern, path):
     Returns an empty string when there are no matches.
     Blocks absolute paths and directory traversal.
 
+    # these are good tests
+    
     >>> grep('^def grep', 'tools/grep.py')
     'tools/grep.py:def grep(pattern, path):'
     >>> grep('zzz_no_match', 'tools/calculate.py')

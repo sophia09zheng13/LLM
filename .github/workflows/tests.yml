@@ -24,16 +24,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install groq python-dotenv flake8
 
-      - name: Lint with flake8
-        run: |
-          flake8 chat.py tools/ --max-line-length=100 --extend-ignore=E501
-
+      # you shouldn't flake8 in both spots;
+      # the reason to have a separate flake8 action
+      # is so that the doctests can still run
+      # even if flake8 fails
       - name: Run unit doctests (no API key required)
         run: |
           python -m doctest chat.py -v
-          python -m doctest tools/utils.py -v
-          python -m doctest tools/calculate.py -v
-          python -m doctest tools/cat.py -v
-          python -m doctest tools/compact.py -v
-          python -m doctest tools/grep.py -v
-          python -m doctest tools/ls.py -v
+          python -m doctest tools/*.py -v

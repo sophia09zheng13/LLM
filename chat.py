@@ -76,6 +76,9 @@ class Chat:
 
         Unit tests mock the Groq client so no API key is required.
 
+        # these are pretty janky test cases;
+        # they're harder to understand than the actual code
+
         No-tool-call path (model replies directly):
         >>> import unittest.mock, types
         >>> fake_msg = types.SimpleNamespace(tool_calls=None, content='Arrr!')
@@ -359,30 +362,11 @@ def main():
     With a positional message, sends that message and exits.
     ``--debug`` prints tool calls as ``[tool] /tool_name args``.
 
-    >>> import unittest.mock, types
-    >>> fake_msg = types.SimpleNamespace(tool_calls=None, content='Arrr!')
-    >>> fake_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_msg)])
-    >>> with unittest.mock.patch('chat.Groq') as MockGroq, \\
-    ...      unittest.mock.patch('sys.argv', ['chat', 'hello']):
-    ...     MockGroq.return_value.chat.completions.create.return_value = fake_resp
-    ...     main()
-    Arrr!
 
-    With --debug and a tool call, the tool invocation is printed:
-    >>> tool_call = types.SimpleNamespace(
-    ...     id='tc1',
-    ...     function=types.SimpleNamespace(name='calculate', arguments='{"expression": "1+1"}')
-    ... )
-    >>> fake_tool_msg = types.SimpleNamespace(tool_calls=[tool_call], content=None)
-    >>> fake_tool_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_tool_msg)])
-    >>> fake_final_msg = types.SimpleNamespace(content='The answer be 2!')
-    >>> fake_final_resp = types.SimpleNamespace(choices=[types.SimpleNamespace(message=fake_final_msg)])
-    >>> with unittest.mock.patch('chat.Groq') as MockGroq, \\
-    ...      unittest.mock.patch('sys.argv', ['chat', '--debug', 'what is 1+1?']):
-    ...     MockGroq.return_value.chat.completions.create.side_effect = [fake_tool_resp, fake_final_resp]
-    ...     main()
-    [tool] /calculate 1+1
-    The answer be 2!
+    # I wouldn't try to write tests for this;
+    # your tests aren't testing the "interesting" part of this function, which is the argparse stuff,
+    # they are only testing the repl parts,
+    # which are tested in the repl function
     """
     parser = argparse.ArgumentParser(description='Pirate-themed chat agent powered by Groq.')
     parser.add_argument('message', nargs='?', help='Send a single message and exit.')
