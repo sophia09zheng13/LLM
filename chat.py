@@ -218,24 +218,30 @@ def repl(debug=False, temperature=0.0):
     When *debug* is ``True``, tool calls made by the LLM are printed as
     ``[tool] /tool_name args`` before the response.
 
+    >>> import builtins, unittest.mock
+    >>> import chat
+
+    Helper that fakes ``input()`` — prints the prompt and returns each value
+    in turn, then raises ``KeyboardInterrupt`` when the values run out:
+
+    >>> def fake_input(*values):
+    ...     it = iter(values)
+    ...     def _input(prompt):
+    ...         try:
+    ...             v = next(it)
+    ...             print(prompt + v)
+    ...             return v
+    ...         except StopIteration:
+    ...             raise KeyboardInterrupt
+    ...     return _input
+
     Test normal LLM messages (send_message is mocked so no API call is made):
 
-    >>> def monkey_input(prompt, user_inputs=['Hello, I am monkey.', 'Goodbye.']):
-    ...     try:
-    ...         user_input = user_inputs.pop(0)
-    ...         print(f'{prompt}{user_input}')
-    ...         return user_input
-    ...     except IndexError:
-    ...         raise KeyboardInterrupt
-    >>> import builtins, unittest.mock
-    >>> builtins.input = monkey_input
-    >>> import chat
     >>> chat.Chat.send_message = lambda self, msg, **kwargs: (
-    ...     "Arrr, a sneaky little monkey!"
-    ...     if msg == "Hello, I am monkey." else
-    ...     "Farewell, little monkey."
+    ...     "Arrr, a sneaky little monkey!" if msg == "Hello, I am monkey." else "Farewell, little monkey."
     ... )
-    >>> with unittest.mock.patch('chat.Groq'):
+    >>> with (unittest.mock.patch('chat.Groq'),
+    ...       unittest.mock.patch('builtins.input', side_effect=fake_input('Hello, I am monkey.', 'Goodbye.'))):
     ...     repl()
     chat> Hello, I am monkey.
     Arrr, a sneaky little monkey!
@@ -245,16 +251,9 @@ def repl(debug=False, temperature=0.0):
 
     Test manual slash command — /ls tools runs the tool directly, no LLM call:
 
-    >>> def monkey_input2(prompt, user_inputs=['/ls tools', 'Goodbye.']):
-    ...     try:
-    ...         user_input = user_inputs.pop(0)
-    ...         print(f'{prompt}{user_input}')
-    ...         return user_input
-    ...     except IndexError:
-    ...         raise KeyboardInterrupt
-    >>> builtins.input = monkey_input2
     >>> chat.Chat.send_message = lambda self, msg, **kwargs: "Farewell."
-    >>> with unittest.mock.patch('chat.Groq'):
+    >>> with (unittest.mock.patch('chat.Groq'),
+    ...       unittest.mock.patch('builtins.input', side_effect=fake_input('/ls tools', 'Goodbye.'))):
     ...     repl()
     chat> /ls tools
     __init__.py calculate.py cat.py compact.py doctests.py grep.py ls.py pip_install.py rm.py utils.py write_file.py
@@ -264,16 +263,9 @@ def repl(debug=False, temperature=0.0):
 
     Test /compact — summarizes history and resets messages to just the summary:
 
-    >>> def monkey_input_compact(prompt, user_inputs=['/compact']):
-    ...     try:
-    ...         user_input = user_inputs.pop(0)
-    ...         print(f'{prompt}{user_input}')
-    ...         return user_input
-    ...     except IndexError:
-    ...         raise KeyboardInterrupt
-    >>> builtins.input = monkey_input_compact
     >>> with (unittest.mock.patch('chat.Groq'),
-    ...       unittest.mock.patch('chat.compact', return_value='User asked about math.')):
+    ...       unittest.mock.patch('chat.compact', return_value='User asked about math.'),
+    ...       unittest.mock.patch('builtins.input', side_effect=fake_input('/compact'))):
     ...     repl()
     chat> /compact
     User asked about math.
@@ -281,16 +273,9 @@ def repl(debug=False, temperature=0.0):
 
     Test debug=True — the flag is forwarded to send_message:
 
-    >>> def monkey_input3(prompt, user_inputs=['hello']):
-    ...     try:
-    ...         user_input = user_inputs.pop(0)
-    ...         print(f'{prompt}{user_input}')
-    ...         return user_input
-    ...     except IndexError:
-    ...         raise KeyboardInterrupt
-    >>> builtins.input = monkey_input3
     >>> chat.Chat.send_message = lambda self, msg, debug=False, **kwargs: f"debug={debug}"
-    >>> with unittest.mock.patch('chat.Groq'):
+    >>> with (unittest.mock.patch('chat.Groq'),
+    ...       unittest.mock.patch('builtins.input', side_effect=fake_input('hello'))):
     ...     repl(debug=True)
     chat> hello
     debug=True
