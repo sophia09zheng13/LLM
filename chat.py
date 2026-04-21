@@ -20,6 +20,7 @@ from tools.compact import compact
 from tools.doctests import doctests, tool_schema as doctests_schema
 from tools.grep import grep, tool_schema as grep_schema
 from tools.ls import ls, tool_schema as ls_schema
+from tools.pip_install import pip_install, tool_schema as pip_install_schema
 from tools.rm import rm, tool_schema as rm_schema
 from tools.write_file import write_file, tool_schema as write_file_schema
 from tools.write_file import write_files, write_files_schema
@@ -35,6 +36,7 @@ tool_schema = [
     write_file_schema,
     write_files_schema,
     rm_schema,
+    pip_install_schema,
 ]
 
 available_functions = {
@@ -46,6 +48,7 @@ available_functions = {
     "write_file": write_file,
     "write_files": write_files,
     "rm": rm,
+    "pip_install": pip_install,
 }
 
 _SYSTEM_PROMPT = (
@@ -90,24 +93,34 @@ class Chat:
 
         When *debug* is ``True``, each tool call is printed as
         ``[tool] /tool_name arg1 arg2`` before it executes.
+
+        Ralph Wiggum loop: if any tool returns doctest failures, the agent is
+        forced into another round of tool use so it can fix the code before
+        returning a response.
         """
         self.messages.append({'role': 'user', 'content': message})
 
-        chat_completion = self.client.chat.completions.create(
-            messages=self.messages,
-            model=self.MODEL,
-            temperature=temperature,
-            seed=0,
-            tools=tool_schema,
-            tool_choice="auto",
-        )
-        response_message = chat_completion.choices[0].message
-        tool_calls = response_message.tool_calls
+        while True:
+            completion = self.client.chat.completions.create(
+                messages=self.messages,
+                model=self.MODEL,
+                temperature=temperature,
+                seed=0,
+                tools=tool_schema,
+                tool_choice="auto",
+            )
+            response_message = completion.choices[0].message
+            tool_calls = response_message.tool_calls
 
-        if tool_calls:
+            if not tool_calls:
+                result = response_message.content
+                self.messages.append({'role': 'assistant', 'content': result})
+                return result
+
             self.messages.append(response_message)
-
             raw_output = None
+            doctest_failed = False
+
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
                 function_to_call = available_functions[function_name]
@@ -121,12 +134,18 @@ class Chat:
                 if function_name == "cat":
                     raw_output = function_response
 
+                if '***Test Failed***' in function_response:
+                    doctest_failed = True
+
                 self.messages.append({
                     "tool_call_id": tool_call.id,
                     "role": "tool",
                     "name": function_name,
                     "content": function_response,
                 })
+
+            if doctest_failed:
+                continue  # Ralph Wiggum: force another round to fix failing tests
 
             if raw_output is not None:
                 self.messages.append({'role': 'assistant', 'content': raw_output})
@@ -139,10 +158,6 @@ class Chat:
             result = second_response.choices[0].message.content
             self.messages.append({'role': 'assistant', 'content': result})
             return result
-
-        result = chat_completion.choices[0].message.content
-        self.messages.append({'role': 'assistant', 'content': result})
-        return result
 
 
 def _make_completer():
@@ -242,7 +257,7 @@ def repl(debug=False, temperature=0.0):
     >>> with unittest.mock.patch('chat.Groq'):
     ...     repl()
     chat> /ls tools
-    __init__.py calculate.py cat.py compact.py doctests.py grep.py ls.py rm.py utils.py write_file.py
+    __init__.py calculate.py cat.py compact.py doctests.py grep.py ls.py pip_install.py rm.py utils.py write_file.py
     chat> Goodbye.
     Farewell.
     <BLANKLINE>

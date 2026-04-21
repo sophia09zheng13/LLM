@@ -42,7 +42,7 @@ def grep(pattern, path):
     >>> grep('zzz_no_match', 'tools/calculate.py')
     ''
     >>> grep('^def ', 'tools/*.py')
-    'tools/calculate.py:def calculate(expression):\\ntools/cat.py:def cat(file):\\ntools/compact.py:def compact(messages, subagent):\\ntools/doctests.py:def doctests(path):\\ntools/grep.py:def grep(pattern, path):\\ntools/ls.py:def ls(folder=None):\\ntools/rm.py:def rm(path):\\ntools/utils.py:def is_path_safe(path):\\ntools/write_file.py:def write_files(files, commit_message):\\ntools/write_file.py:def write_file(path, contents, commit_message):'
+    'tools/calculate.py:def calculate(expression):\\ntools/cat.py:def cat(file):\\ntools/compact.py:def compact(messages, subagent):\\ntools/doctests.py:def doctests(path):\\ntools/grep.py:def grep(pattern, path):\\ntools/ls.py:def ls(folder=None):\\ntools/pip_install.py:def pip_install(library_name):\\ntools/rm.py:def rm(path):\\ntools/utils.py:def is_path_safe(path):\\ntools/write_file.py:def write_files(files, commit_message):\\ntools/write_file.py:def write_file(path, contents, commit_message):'
     >>> grep('^def ', '/etc/passwd')
     "Error: path '/etc/passwd' is not allowed"
     >>> grep('^def ', '../secret.py')
