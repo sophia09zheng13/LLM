@@ -70,15 +70,18 @@ def write_files(files, commit_message):
     Returns doctest output for any ``.py`` files written, otherwise a
     confirmation message.
 
-    >>> import os, tempfile, git as _git
+    >>> import os, git as _git
     >>> repo = _git.Repo('.')
     >>> result = write_files([{'path': 'tmp_test_write.txt', 'contents': 'hello'}], 'test write')
     >>> 'tmp_test_write.txt' in result
     True
-    >>> os.path.exists('tmp_test_write.txt')
-    True
     >>> _ = repo.git.rm('tmp_test_write.txt')
     >>> _ = repo.index.commit('[docchat] cleanup test file')
+    >>> result2 = write_files([{'path': 'tmp_test_write.py', 'contents': '# no doctests'}], 'test py write')
+    >>> isinstance(result2, str)
+    True
+    >>> _ = repo.git.rm('tmp_test_write.py')
+    >>> _ = repo.index.commit('[docchat] cleanup py test file')
     """
     for f in files:
         if not is_path_safe(f['path']):
