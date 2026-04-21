@@ -17,18 +17,35 @@ from dotenv import load_dotenv
 from tools.calculate import calculate, tool_schema as calculate_schema
 from tools.cat import cat, tool_schema as cat_schema
 from tools.compact import compact
+from tools.doctests import doctests, tool_schema as doctests_schema
 from tools.grep import grep, tool_schema as grep_schema
 from tools.ls import ls, tool_schema as ls_schema
+from tools.rm import rm, tool_schema as rm_schema
+from tools.write_file import write_file, tool_schema as write_file_schema
+from tools.write_file import write_files, write_files_schema
 
 load_dotenv()
 
-tool_schema = [calculate_schema, ls_schema, cat_schema, grep_schema]
+tool_schema = [
+    calculate_schema,
+    ls_schema,
+    cat_schema,
+    grep_schema,
+    doctests_schema,
+    write_file_schema,
+    write_files_schema,
+    rm_schema,
+]
 
 available_functions = {
     "calculate": calculate,
     "ls": ls,
     "cat": cat,
     "grep": grep,
+    "doctests": doctests,
+    "write_file": write_file,
+    "write_files": write_files,
+    "rm": rm,
 }
 
 _SYSTEM_PROMPT = (
@@ -271,6 +288,10 @@ def repl(debug=False, temperature=0.0):
     else:
         readline.parse_and_bind('tab: complete')
     chat = Chat()
+    if os.path.exists('AGENTS.md'):
+        content = cat('AGENTS.md')
+        chat.messages.append({'role': 'user', 'content': f'[AGENTS.md]\n{content}'})
+        chat.messages.append({'role': 'assistant', 'content': 'Understood. I have read AGENTS.md and will follow its instructions.'})
     try:
         while True:
             user_input = input('chat> ')
@@ -310,6 +331,10 @@ def main():
     parser.add_argument('message', nargs='?', help='Send a single message and exit.')
     parser.add_argument('--debug', action='store_true', help='Print tool calls as they happen.')
     args = parser.parse_args()
+
+    if not os.path.exists('.git'):
+        print("Error: no .git folder found in current directory. Please run from a git repo.")
+        return
 
     if args.message:
         chat = Chat()

@@ -1,4 +1,5 @@
 groq
+gitpython
 python-dotenv
 pytest
 flake8
