@@ -8,8 +8,8 @@
 
 A pirate-themed command-line chat agent powered by Groq's LLM API. The agent
 can answer questions, remember conversational context, and call built-in tools
-(`calculate`, `cat`, `grep`, `ls`, `write_file`, `write_files`, `doctests`, `rm`)
-either automatically or via `/slash` commands.
+(`calculate`, `cat`, `grep`, `ls`, `write_file`, `write_files`, `doctests`, `rm`,
+`pip_install`) either automatically or via `/slash` commands.
 
 The agent automatically commits every file change to git, so all edits are
 reversible.
@@ -125,6 +125,51 @@ a1b2c3d [docchat] add hello.txt
 ...
 ```
 
+Ask the agent to patch a file instead of rewriting it:
+
+```
+chat> add a docstring to the greet function in greet.py
+Arrr, I've patched the file and committed the change, matey!
+```
+
+Ask the agent to install a package:
+
+```
+chat> install the requests library
+Arrr, requests be installed and ready to sail!
+```
+
+## Extra credit features
+
+### pip_install tool
+
+The agent can install Python packages with `pip_install`. This lets it pull in
+libraries it needs to complete a task without leaving the chat session.
+
+**Warning:** PyPI packages run arbitrary code on your machine. Only ask the
+agent to install packages you trust.
+
+### Ralph Wiggum loop
+
+Whenever the agent writes a Python file and the doctests fail, it is
+automatically forced into another round of tool use to fix the code. It cannot
+give a final response until all doctests pass. This means you can ask the agent
+to "write a function with doctests" and it will keep trying until the tests are
+green.
+
+### Diff/patch via wiggle
+
+`write_file` and `write_files` now accept a `diff` parameter (unified diff
+format) in addition to `contents`. Instead of rewriting the whole file, the
+agent can send just the changed lines. The diff is applied using
+[wiggle](https://github.com/neilbrown/wiggle), which tolerates the fuzzy
+line numbers that LLMs typically produce.
+
+This saves tokens for large files and reduces the chance of the model
+accidentally introducing typos in unchanged code.
+
+Requires wiggle: `brew install wiggle` (macOS) or `sudo apt install wiggle` (Linux).
+
 ## Tools
 
 | Tool | Description |
@@ -133,8 +178,9 @@ a1b2c3d [docchat] add hello.txt
 | `ls [folder]` | List files in a directory |
 | `cat file` | Print the contents of a file |
 | `grep pattern path` | Search for lines matching a regex across files |
-| `write_file path contents msg` | Write a file and commit it to git |
-| `write_files files msg` | Write multiple files in one git commit |
+| `write_file path [contents\|diff] msg` | Write or patch a file and commit it |
+| `write_files files msg` | Write or patch multiple files in one git commit |
 | `doctests path` | Run doctests on a Python file and return the output |
 | `rm path` | Delete files matching a glob and commit the removal |
+| `pip_install library` | Install a Python package via pip |
 | `compact` | Summarize conversation history and reset to a compact summary (slash command only) |
